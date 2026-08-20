@@ -1,0 +1,10 @@
+# Office lock files
+~$*.docx
+~$*.xlsx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code harness runtime state (not project code)
+.claude/scheduled_tasks.lock
