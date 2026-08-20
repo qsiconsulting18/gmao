@@ -34,7 +34,41 @@ class DashboardController extends Controller
             'mtbf_days' => $this->mtbfDays(),
             'parts_cost_period' => $this->partsCost($from, $to),
             'low_stock_parts' => Part::whereColumn('quantity_on_hand', '<=', 'alert_threshold')->count(),
+            'daily_trend' => $this->dailyTrend($from, $to),
         ]);
+    }
+
+    /**
+     * Tickets reported vs closed per day, for the dashboard trend chart.
+     */
+    private function dailyTrend($from, $to): array
+    {
+        $reported = Ticket::whereBetween('created_at', [$from, $to])
+            ->get(['created_at'])
+            ->groupBy(fn ($t) => $t->created_at->format('Y-m-d'))
+            ->map->count();
+
+        $closed = Ticket::whereNotNull('closed_at')
+            ->whereBetween('closed_at', [$from, $to])
+            ->get(['closed_at'])
+            ->groupBy(fn ($t) => $t->closed_at->format('Y-m-d'))
+            ->map->count();
+
+        $days = [];
+        $cursor = $from->copy()->startOfDay();
+        $end = $to->copy()->startOfDay();
+
+        while ($cursor->lte($end)) {
+            $key = $cursor->format('Y-m-d');
+            $days[] = [
+                'date' => $key,
+                'reported' => $reported->get($key, 0),
+                'closed' => $closed->get($key, 0),
+            ];
+            $cursor->addDay();
+        }
+
+        return $days;
     }
 
     /**

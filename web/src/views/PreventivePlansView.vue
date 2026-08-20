@@ -40,6 +40,17 @@ async function createPlan() {
   await load()
 }
 
+async function toggleActive(plan: PreventivePlan) {
+  await api.patch(`/preventive-plans/${plan.id}`, { active: !plan.active })
+  await load()
+}
+
+async function removePlan(plan: PreventivePlan) {
+  if (!confirm(`Supprimer le plan "${plan.name}" ?`)) return
+  await api.delete(`/preventive-plans/${plan.id}`)
+  await load()
+}
+
 onMounted(() => {
   load()
   loadEquipments()
@@ -77,12 +88,27 @@ onMounted(() => {
     <div v-if="loading" class="mt-6 text-sm text-slate-500">Chargement…</div>
 
     <div v-else class="mt-4 bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
-      <div v-for="plan in plans" :key="plan.id" class="flex items-center justify-between p-4">
-        <div>
+      <div v-for="plan in plans" :key="plan.id" class="flex items-center justify-between p-4 gap-4" :class="{ 'opacity-50': !plan.active }">
+        <div class="flex-1">
           <p class="text-sm font-medium text-slate-900">{{ plan.name }}</p>
           <p class="text-xs text-slate-500 mt-0.5">{{ plan.equipment.name }} · tous les {{ plan.frequency_value }} {{ frequencyLabel[plan.frequency_type] }}</p>
         </div>
         <p class="text-sm text-slate-600">Échéance : {{ new Date(plan.next_due_date).toLocaleDateString('fr-FR') }}</p>
+        <div class="flex items-center gap-2">
+          <button
+            class="text-sm font-medium px-3 py-1.5 rounded-md"
+            :class="plan.active ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'"
+            @click="toggleActive(plan)"
+          >
+            {{ plan.active ? 'Désactiver' : 'Réactiver' }}
+          </button>
+          <button
+            class="bg-red-50 text-red-600 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-red-100"
+            @click="removePlan(plan)"
+          >
+            Supprimer
+          </button>
+        </div>
       </div>
       <p v-if="plans.length === 0" class="p-8 text-center text-sm text-slate-400">Aucun plan de maintenance préventive.</p>
     </div>

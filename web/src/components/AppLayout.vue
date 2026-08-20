@@ -8,6 +8,7 @@ const router = useRouter()
 const navItems = [
   { name: 'dashboard', label: 'Tableau de bord', roles: null },
   { name: 'equipments', label: 'Équipements', roles: null },
+  { name: 'qr-labels', label: 'Étiquettes QR', roles: ['admin', 'manager'] },
   { name: 'tickets', label: 'Tickets', roles: null },
   { name: 'work-orders', label: 'Bons de travail', roles: null },
   { name: 'preventive-plans', label: 'Maintenance préventive', roles: ['admin', 'manager'] },

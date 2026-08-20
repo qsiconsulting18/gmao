@@ -120,6 +120,7 @@ export interface DashboardKpis {
   mtbf_days: number | null
   parts_cost_period: number
   low_stock_parts: number
+  daily_trend: { date: string; reported: number; closed: number }[]
 }
 
 export interface Paginated<T> {

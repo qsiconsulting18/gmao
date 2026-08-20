@@ -14,6 +14,7 @@ const router = createRouter({
         { path: '', name: 'dashboard', component: () => import('@/views/DashboardView.vue') },
         { path: 'equipments', name: 'equipments', component: () => import('@/views/EquipmentsView.vue') },
         { path: 'equipments/:id', name: 'equipment-detail', component: () => import('@/views/EquipmentDetailView.vue') },
+        { path: 'qr-labels', name: 'qr-labels', component: () => import('@/views/QrLabelsView.vue'), meta: { roles: ['admin', 'manager'] } },
         { path: 'tickets', name: 'tickets', component: () => import('@/views/TicketsView.vue') },
         { path: 'tickets/:id', name: 'ticket-detail', component: () => import('@/views/TicketDetailView.vue') },
         { path: 'preventive-plans', name: 'preventive-plans', component: () => import('@/views/PreventivePlansView.vue') },
