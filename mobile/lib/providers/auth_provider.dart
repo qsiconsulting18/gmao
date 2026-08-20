@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/dio_client.dart';
+import '../core/push/push_service.dart';
 import '../core/storage/secure_storage.dart';
 import '../models/user.dart';
 
@@ -58,9 +59,11 @@ class AuthNotifier extends Notifier<AuthState> {
       tenant: Tenant.fromJson(res.data['tenant']),
       checking: false,
     );
+    PushService.registerCurrentToken();
   }
 
   Future<void> logout() async {
+    await PushService.clearToken();
     try {
       await DioClient.instance.post('/auth/logout');
     } catch (_) {

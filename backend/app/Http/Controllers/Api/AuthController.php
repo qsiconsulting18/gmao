@@ -82,4 +82,20 @@ class AuthController extends Controller
     {
         return $request->user()->load('tenant');
     }
+
+    /**
+     * Register (or clear) the current device's FCM push token for the
+     * authenticated user. Called by the mobile app after login and whenever
+     * Firebase issues a new token.
+     */
+    public function updateFcmToken(Request $request)
+    {
+        $data = $request->validate([
+            'fcm_token' => 'nullable|string',
+        ]);
+
+        $request->user()->update(['fcm_token' => $data['fcm_token'] ?? null]);
+
+        return response()->json(['message' => 'Token enregistré.']);
+    }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/push/push_service.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/sync_service.dart';
 import 'router/app_router.dart';
@@ -15,6 +16,7 @@ class GmaoApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     ref.read(syncServiceProvider).flush();
+    PushService.initialize(router);
 
     return MaterialApp.router(
       title: 'GMAO Léger',

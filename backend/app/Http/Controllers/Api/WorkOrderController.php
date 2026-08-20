@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\WorkOrder;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 
 class WorkOrderController extends Controller
 {
+    public function __construct(private readonly PushNotificationService $push) {}
+
     public function index(Request $request)
     {
         $query = WorkOrder::with(['equipment', 'assignee']);
@@ -37,11 +40,18 @@ class WorkOrderController extends Controller
             'due_date' => 'required|date',
         ]);
 
-        $workOrder = WorkOrder::create($data);
+        $workOrder = WorkOrder::create($data)->load(['equipment', 'assignee']);
 
-        // TODO: push notification (FCM) to the assigned technician.
+        if ($workOrder->assignee) {
+            $this->push->sendToUser(
+                $workOrder->assignee,
+                'Nouveau bon de travail',
+                "{$workOrder->title} — {$workOrder->equipment->name}",
+                ['work_order_id' => $workOrder->id],
+            );
+        }
 
-        return response()->json($workOrder->load('equipment'), 201);
+        return response()->json($workOrder, 201);
     }
 
     public function show(WorkOrder $workOrder)
@@ -58,8 +68,20 @@ class WorkOrderController extends Controller
             'due_date' => 'sometimes|date',
         ]);
 
-        $workOrder->update($data);
+        $previousAssignee = $workOrder->assigned_to;
 
-        return $workOrder->fresh(['equipment', 'assignee']);
+        $workOrder->update($data);
+        $workOrder = $workOrder->fresh(['equipment', 'assignee']);
+
+        if ($workOrder->assigned_to && $workOrder->assigned_to !== $previousAssignee) {
+            $this->push->sendToUser(
+                $workOrder->assignee,
+                'Bon de travail assigné',
+                "{$workOrder->title} — {$workOrder->equipment->name}",
+                ['work_order_id' => $workOrder->id],
+            );
+        }
+
+        return $workOrder;
     }
 }

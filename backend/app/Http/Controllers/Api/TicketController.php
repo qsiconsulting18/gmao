@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Equipment;
 use App\Models\Ticket;
+use App\Models\User;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 
 class TicketController extends Controller
 {
+    public function __construct(private readonly PushNotificationService $push) {}
+
     public function index(Request $request)
     {
         $query = Ticket::with(['equipment', 'reporter', 'assignee']);
@@ -57,9 +61,18 @@ class TicketController extends Controller
 
         Equipment::where('id', $data['equipment_id'])->update(['status' => 'down']);
 
-        // TODO: push notification (FCM) to available technicians once notification channel is wired up.
+        $ticket->load('equipment');
 
-        return response()->json($ticket->load('equipment'), 201);
+        foreach (User::whereIn('role', ['manager', 'admin'])->get() as $manager) {
+            $this->push->sendToUser(
+                $manager,
+                'Nouvelle panne signalée',
+                "{$ticket->title} — {$ticket->equipment->name}",
+                ['ticket_id' => $ticket->id],
+            );
+        }
+
+        return response()->json($ticket, 201);
     }
 
     public function show(Ticket $ticket)
@@ -99,8 +112,15 @@ class TicketController extends Controller
             'status' => 'assigned',
         ]);
 
-        // TODO: push notification (FCM) to the assigned technician.
+        $ticket = $ticket->fresh(['equipment', 'assignee']);
 
-        return $ticket->fresh(['equipment', 'assignee']);
+        $this->push->sendToUser(
+            $ticket->assignee,
+            'Ticket assigné',
+            "{$ticket->title} — {$ticket->equipment->name}",
+            ['ticket_id' => $ticket->id],
+        );
+
+        return $ticket;
     }
 }
