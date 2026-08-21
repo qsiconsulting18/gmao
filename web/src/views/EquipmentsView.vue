@@ -51,6 +51,39 @@ async function createEquipment() {
   await load()
 }
 
+async function exportExcel() {
+  const { data } = await api.get('/equipments-export', { responseType: 'blob' })
+  const url = URL.createObjectURL(data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'equipements.xlsx'
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+const importInput = ref<HTMLInputElement | null>(null)
+const importing = ref(false)
+
+function triggerImport() {
+  importInput.value?.click()
+}
+
+async function handleImport(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  importing.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    await api.post('/equipments-import', formData)
+    await load()
+  } finally {
+    importing.value = false
+    if (importInput.value) importInput.value.value = ''
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -61,13 +94,22 @@ onMounted(load)
         <h1 class="text-xl font-semibold text-slate-900">Équipements</h1>
         <p class="text-sm text-slate-500 mt-1">Parc machines et fiches techniques.</p>
       </div>
-      <button
-        v-if="auth.isManagerOrAdmin"
-        class="bg-slate-900 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-slate-800"
-        @click="showForm = !showForm"
-      >
-        {{ showForm ? 'Annuler' : '+ Nouvel équipement' }}
-      </button>
+      <div v-if="auth.isManagerOrAdmin" class="flex gap-2">
+        <input ref="importInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="handleImport" />
+        <button
+          :disabled="importing"
+          class="bg-slate-100 text-slate-700 text-sm font-medium px-4 py-2 rounded-md hover:bg-slate-200 disabled:opacity-50"
+          @click="triggerImport"
+        >
+          {{ importing ? 'Import…' : 'Importer Excel' }}
+        </button>
+        <button class="bg-slate-100 text-slate-700 text-sm font-medium px-4 py-2 rounded-md hover:bg-slate-200" @click="exportExcel">
+          Exporter Excel
+        </button>
+        <button class="bg-slate-900 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-slate-800" @click="showForm = !showForm">
+          {{ showForm ? 'Annuler' : '+ Nouvel équipement' }}
+        </button>
+      </div>
     </div>
 
     <form v-if="showForm" class="mt-4 bg-white border border-slate-200 rounded-xl p-5 grid grid-cols-2 gap-3" @submit.prevent="createEquipment">
