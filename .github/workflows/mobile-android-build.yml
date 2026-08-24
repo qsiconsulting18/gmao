@@ -6,6 +6,15 @@ on:
       - 'mobile/**'
       - '.github/workflows/mobile-android-build.yml'
   workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "URL de l'API backend (ex: http://192.168.1.42:8000/api). Laisser vide pour l'émulateur Android (10.0.2.2)."
+        required: false
+        default: ''
+      api_origin:
+        description: "Origine du backend, sans /api (ex: http://192.168.1.42:8000)."
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -33,7 +42,15 @@ jobs:
       - run: flutter test
 
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: |
+          DEFINES=""
+          if [ -n "${{ github.event.inputs.api_base_url }}" ]; then
+            DEFINES="$DEFINES --dart-define=API_BASE_URL=${{ github.event.inputs.api_base_url }}"
+          fi
+          if [ -n "${{ github.event.inputs.api_origin }}" ]; then
+            DEFINES="$DEFINES --dart-define=API_ORIGIN=${{ github.event.inputs.api_origin }}"
+          fi
+          flutter build apk --debug $DEFINES
 
       - uses: actions/upload-artifact@v4
         with:
